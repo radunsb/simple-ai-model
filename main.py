@@ -7,6 +7,7 @@ from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
 from functions.run_python_file import schema_run_python_file
 from functions.write_file import schema_write_file
+from functions.call_function import call_function
 
 def main():
 	if(len(sys.argv) < 2):
@@ -50,7 +51,14 @@ All paths you provide should be relative to the working directory. You do not ne
 	)
 	if(len(response.function_calls) > 0):
 		for call in response.function_calls:
-			print(f"Calling function: {call.name}({call.args})")
+			content_return = call_function(call)
+			try:
+				to_print = content_return.parts[0].function_response.response
+				if ("--verbose" in sys.argv[2:]):
+					print(f"-> {content_return.parts[0].function_response.response}")
+			except Exception as e:
+				raise Exception("Content did not contain function response")
+				
 	else:
 		print(response.text)
 	if ("--verbose" in sys.argv[2:]):
