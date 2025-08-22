@@ -1,5 +1,28 @@
 import os
 import subprocess
+from google.genai import types
+
+schema_run_python_file = types.FunctionDeclaration(
+	name="run_python_file",
+	description="Runs a python file with specified arguments and prints the output. If there is an error, it will print the error message and exit code. Constrained to the working directory.",
+	parameters=types.Schema(
+		type=types.Type.OBJECT,
+		properties={
+			"file_path": types.Schema(
+				type=types.Type.STRING,
+				description="The path of the python file which will be run, relative to the working directory",
+			),
+			"args": types.Schema(
+				type=types.Type.ARRAY,
+				description="An optional list of arguments that the file will be run with.",
+				items=types.Schema(
+					type=types.Type.STRING,
+				),
+			)
+		},
+	),
+)
+
 
 def run_python_file(working_directory, file_path, args=[]):
 	try:
