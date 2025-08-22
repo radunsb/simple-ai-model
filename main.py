@@ -40,31 +40,37 @@ All paths you provide should be relative to the working directory. You do not ne
 			schema_write_file
 		]
 	)
-	
-	response = client.models.generate_content(
-		model="gemini-2.0-flash-001", 
-		contents=messages,
-		config=types.GenerateContentConfig(
-			tools=[available_functions],
-			system_instruction=system_prompt
+	for i in range(0, 20):
+		response = client.models.generate_content(
+			model="gemini-2.0-flash-001", 
+			contents=messages,
+			config=types.GenerateContentConfig(
+				tools=[available_functions],
+				system_instruction=system_prompt
+			)
 		)
-	)
-	if(len(response.function_calls) > 0):
-		for call in response.function_calls:
-			content_return = call_function(call)
-			try:
-				to_print = content_return.parts[0].function_response.response
-				if ("--verbose" in sys.argv[2:]):
-					print(f"-> {content_return.parts[0].function_response.response}")
-			except Exception as e:
-				raise Exception("Content did not contain function response")
+		for candidate in response.candidates:
+			messages.append(candidate.content)
+
+		if(response.function_calls and len(response.function_calls) > 0):
+			for call in response.function_calls:
+				content_return = call_function(call)
+				try:
+					to_print = content_return.parts[0].function_response.response
+					if ("--verbose" in sys.argv[2:]):
+						print(f"-> {to_print['result']}")
+					new_message = types.Content(role="user",parts=[types.Part(text=to_print['result'])])
+					messages.append(new_message)
+				except Exception as e:
+					raise Exception("Content did not contain function response")
 				
-	else:
-		print(response.text)
-	if ("--verbose" in sys.argv[2:]):
-		print(f"User prompt: {input_string}")
-		print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-		print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+		else:
+			print(response.text)
+			break
+		if ("--verbose" in sys.argv[2:]):
+			print(f"User prompt: {input_string}")
+			print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+			print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
 
 
 if __name__ == "__main__":
